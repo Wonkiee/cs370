@@ -187,6 +187,20 @@ static int __init set_reset_devices(char *str)
 
 __setup("reset_devices", set_reset_devices);
 
+/*
+ * CS370: If set, prints a "Hello Word" message to the screen during boot.
+ */
+unsigned int printme;
+EXPORT_SYMBOL(printme);
+
+static int __init set_printme(char *str)
+{
+	printme = 1;
+	return 1;
+}
+
+__setup("printme", set_printme);
+
 static char * argv_init[MAX_INIT_ARGS+2] = { "init", NULL, };
 char * envp_init[MAX_INIT_ENVS+2] = { "HOME=/", "TERM=linux", NULL, };
 static const char *panic_later, *panic_param;
@@ -613,6 +627,13 @@ asmlinkage void __init start_kernel(void)
 	if (late_time_init)
 		late_time_init();
 	calibrate_delay();
+
+	/*
+	 * CS370: Adding code to check for "printme" parameter
+	 */
+	if (printme)
+		printk("\nHello World from Me!\n");
+
 	pidmap_init();
 	pgtable_cache_init();
 	prio_tree_init();

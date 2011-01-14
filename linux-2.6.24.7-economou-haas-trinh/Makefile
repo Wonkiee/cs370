@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 6
 SUBLEVEL = 24
-EXTRAVERSION = .7
+EXTRAVERSION = .7-economou-haas-trinh
 NAME = Err Metey! A Heury Beelge-a Ret!
 
 # *DOCUMENTATION*

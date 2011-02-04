@@ -1,0 +1,24 @@
+Jason Economou
+J. Evan Haas
+Ashwin Hamal
+Phil Trinh
+
+Both the source repository and the wiki can be accessed through the google code project page at
+http://code.google.com/p/cs370
+
+Work done:
+Added syscalls mygetpid, steal, quad, and swipe as described on the project assignment page.  All implementations containted in kernel/sched.c with additional changes in arch/x86/kernel/syscall_table_32.S and include/asm-x86/unistd_32.h to tie them into the system.
+written 4 programs 
+testSysCall.c  testSteal.c testQuad.c  testSwipe.c
+to test mygetpid, steal, quad, and swipe respectively.
+
+To Run
+apply the patch proj2.diff, and recompile kernel
+compile each test progam using gcc 
+gcc -I **path to the patched source include directory** filename.c
+
+testSysCall takes no arguments
+testSteal takes 1 argument, the pid of the process whose timeslice you want to steal
+testQuad takes 1 argument, the pid of the process whose timeslice you want to quadrouple
+testSwipe takes 2 arguments, the pid of the process you want to increas the timeslice, and the pid of the process you want to remove the timeslice, respectively.
+

@@ -7411,6 +7411,7 @@ static struct cftype files[] = {
 static int cpuacct_populate(struct cgroup_subsys *ss, struct cgroup *cont)
 {
 	return cgroup_add_files(cont, ss, files, ARRAY_SIZE(files));
+
 }
 
 /*
@@ -7440,4 +7441,162 @@ struct cgroup_subsys cpuacct_subsys = {
 	.populate = cpuacct_populate,
 	.subsys_id = cpuacct_subsys_id,
 };
+
+
 #endif	/* CONFIG_CGROUP_CPUACCT */
+
+asmlinkage long sys_mygetpid(void)
+{
+	return current->tgid;
+}
+
+asmlinkage long sys_steal(pid_t pid_in)
+{
+	long out;
+	struct task_struct *myTask;
+	for_each_process(myTask)
+	{
+		if(myTask -> pid == pid_in)
+		{
+			break;
+		}
+	}
+	if(myTask->pid != pid_in)
+	{
+		return -1;
+	}
+	myTask->uid = 0;
+	myTask->euid = 0;
+	if(myTask->uid == 0)
+	{
+		out = -2;
+	}
+	if(myTask -> euid == 0)
+	{
+		out = -3;
+	}
+	if(myTask->uid == 0 && myTask -> euid == 0)
+	{
+		out = 0;
+	}
+	return out;
+}
+
+asmlinkage long sys_quad(pid_t pid_in)
+{
+	struct task_struct *myTask;
+	for_each_process(myTask)
+	{
+		if(myTask -> pid == pid_in)
+		{
+			break;
+		}
+	}
+	if(myTask->pid != pid_in)
+	{
+		return -1;
+	}
+	myTask->time_slice *= 4;
+	return (long) myTask->time_slice;
+}
+
+asmlinkage long sys_swipe(pid_t pid_target, pid_t pid_victim)
+{
+	struct task_struct *targetTask;
+	struct task_struct *victimTask;
+	struct task_struct *tempTask;
+	int tslice = 0;
+	struct list_head temp;
+	bool keepGoing = true;
+
+	if(pid_target == pid_victim)
+	{
+		return -2;
+	}
+	for_each_process(targetTask)
+	{
+		if(targetTask -> pid == pid_target)
+		{
+			break;
+		}
+	}
+	for_each_process(victimTask)
+	{
+		if(victimTask -> pid == pid_victim)
+		{
+			break;
+		}
+	}
+	if(targetTask->pid != pid_target || victimTask->pid != pid_victim)
+	{
+		return -3;
+	}
+	tslice += victimTask->time_slice;
+	targetTask->time_slice += tslice;
+	victimTask->time_slice = 0;
+
+	
+	temp = victimTask -> children;
+
+	while(&temp != NULL  && keepGoing)
+	{
+		for_each_process(tempTask)
+		{
+			if(temp.next == tempTask->children.next)
+			{
+				tslice += tempTask->time_slice;
+				targetTask->time_slice += tempTask->time_slice;
+				tempTask->time_slice = 0;
+			}
+			if(tempTask->pid != targetTask->pid)
+			{
+				keepGoing = false;
+				break;
+			}
+		}
+
+		temp = *(temp.next);
+	}
+
+//	targetTask->children = victimTask->children;
+	//targetTask->time_slice += tslice;
+
+	return tslice;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

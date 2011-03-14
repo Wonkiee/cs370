@@ -52,6 +52,7 @@ class DirectoryEntry
     byte* getName();
     byte* getExtension();
     
+    bool isDeleted();
     bool isHidden();
     bool isReadOnly();
     bool isSystemFile();
@@ -67,12 +68,15 @@ class DirectoryEntry
     int getSecond();
     
     int getStartingCluster();
+    int getFileSize();
   
 	private:
     void readDirectoryEntry();
     
     int imageStream;
     int startAddress;
+    
+    bool deleted;
     
     byte name[9];
     byte extension[4];

@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include "BootStrapSector.h"
+#include "FileAllocationTable.h"
+#include "DirectoryEntry.h"
 
 using namespace std;
 
@@ -12,12 +14,19 @@ int main(int argc, char *argv[])
   
   BootStrapSector     *boot;
   FileAllocationTable *fat;
-  DirectoryEntry      *rootDir;
+  DirectoryEntry      **entries;
   
-  int  rootDirAddress;
-  byte *sn;
+  byte
+    *sn,
+    *volumeLabel,
+    *volumeLabelExt;
   
-  int e;
+  int
+    rootDirAddress,
+    numEntries,
+    e,
+    numFiles  = 0,
+    totalSize = 0;
   
   if (argc != 2)
   {
@@ -37,35 +46,83 @@ int main(int argc, char *argv[])
     return -1;
   }
   
-  // Read the boot sector and create references to the FAT and root directory
+  // Read the boot sector and locate the FAT and root directory
   boot = new BootStrapSector(imageHandle);
   fat  = new FileAllocationTable(imageHandle, boot->getNumBytesInReservedSectors());
+  
+  sn = boot->getVolumeSerialNumber();
   
   rootDirAddress = boot->getNumBytesInReservedSectors()
     + (boot->getNumBytesInFAT() * boot->getNumCopiesFAT());
   
-  rootDir = new DirectoryEntry(imageHandle, rootDirAddress);
+  numEntries = boot->getNumEntriesInRootDir();
   
-  // Print the catalog information
-  printf("Volume name is %s\n", boot->getVolumeLabel());
+  // Scrape root directory entries
+  entries = new DirectoryEntry*[boot->getNumEntriesInRootDir()];
   
-  sn = boot->getVolumeSerialNumber();
-  
-  printf("Volume Serial Number is %X%X-%X%X", sn[0], sn[1], sn[2], sn[3]);
-  printf("\n");
-  
-  // Print root directory entries
-  for (e = 0; e < boot->getNumEntriesInRootDir(); e++)
+  for (e = 0; e < numEntries; e++)
   {
-    // TODO
+    entries[e] = new DirectoryEntry(imageHandle, rootDirAddress + (e * 32));
+    
+    if (entries[e]->isVolumeLabel())
+    {
+      // Volume label is actually found as a root directory entry, apparently...
+      volumeLabel    = entries[e]->getName();
+      volumeLabelExt = entries[e]->getExtension();
+    }
   }
   
-  // Print directory summary
-  printf("       %d file(s)        %d bytes\n", boot->getNumEntriesInRootDir(), 0);
-  // TODO: Replace 0 above with total file size
+  // Print catalog information
+  printf("Volume name is %s%s\n", volumeLabel, volumeLabelExt);
+  printf("Volume Serial Number is %X%X-%X%X\n", sn[3], sn[2], sn[1], sn[0]);
+  printf("-------------------------------------------\n");
   
-  // Clean up stuff
+  for (e = 0; e < numEntries; e++)
+  {
+    if (entries[e]->isDeleted()
+      || entries[e]->getName()[0] == 0x00
+      || entries[e]->isVolumeLabel())
+    {
+      // Deleted file, empty entry, or entry for volume label: don't display
+    }
+    else
+    {
+      // Actual file or subdirectory
+      printf("%s %s  %7d  %02d-%02d-%d  %02d:%02d:%02d\n",
+        entries[e]->getName(),
+        entries[e]->getExtension(),
+        entries[e]->getFileSize(),
+        entries[e]->getMonth(),
+        entries[e]->getDay(),
+        entries[e]->getYear(),
+        entries[e]->getHour(),
+        entries[e]->getMinute(),
+        entries[e]->getSecond());
+      
+      numFiles++;
+      totalSize += entries[e]->getFileSize();
+    }
+  }
+  
+  printf("-------------------------------------------\n");
+  printf(" %3d file(s)  %7d bytes\n", numFiles, totalSize);
+  
+  // Clean up allocated memory
   delete boot;
+  boot = NULL;
+  
+  delete fat;
+  fat = NULL;
+  
+  for (e = 0; e < numEntries; e++)
+  {
+    delete entries[e];
+    entries[e] = NULL;
+  }
+  
+  delete [] entries;
+  entries = NULL;
+  
   close(imageHandle);
   
   return 0;

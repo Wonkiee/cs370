@@ -9,8 +9,15 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   int imageHandle;
-  BootStrapSector *boot;
-  byte* sn;
+  
+  BootStrapSector     *boot;
+  FileAllocationTable *fat;
+  DirectoryEntry      *rootDir;
+  
+  int  rootDirAddress;
+  byte *sn;
+  
+  int e;
   
   if (argc != 2)
   {
@@ -30,7 +37,14 @@ int main(int argc, char *argv[])
     return -1;
   }
   
+  // Read the boot sector and create references to the FAT and root directory
   boot = new BootStrapSector(imageHandle);
+  fat  = new FileAllocationTable(imageHandle, boot->getNumBytesInReservedSectors());
+  
+  rootDirAddress = boot->getNumBytesInReservedSectors()
+    + (boot->getNumBytesInFAT() * boot->getNumCopiesFAT());
+  
+  rootDir = new DirectoryEntry(imageHandle, rootDirAddress);
   
   // Print the catalog information
   printf("Volume name is %s\n", boot->getVolumeLabel());
@@ -41,7 +55,10 @@ int main(int argc, char *argv[])
   printf("\n");
   
   // Print root directory entries
-  // TODO
+  for (e = 0; e < boot->getNumEntriesInRootDir(); e++)
+  {
+    // TODO
+  }
   
   // Print directory summary
   printf("       %d file(s)        %d bytes\n", boot->getNumEntriesInRootDir(), 0);

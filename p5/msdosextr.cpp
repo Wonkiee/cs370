@@ -87,27 +87,29 @@ void extract(
     
     // Traverse FAT and extract data from each cluster referenced
     cluster = entry->getStartingCluster();
-    printf("-- %d --", cluster);
+    
     // NOTE: This currently doesn't check for bad clusters or reserved values
     while (cluster != 0 && cluster < 0xFF8)
     {
-      // Get next cluster from FAT
+      // Read the cluster from the disk image
+      lseek(
+          imageHandle,
+          dataStartAddress + ((cluster - 2) * bytesPerCluster),
+          SEEK_SET);
+      
+      read(imageHandle, buffer, bytesPerCluster);
+      
+      // Get next cluster entry from the FAT
       nextCluster = fat->getEntry(cluster);
       
       if (nextCluster >= 0xFF8)
       {
         // This is the last cluster; write only until end of file
-        // TODO
+        write(fileHandle, buffer, entry->getFileSize() % bytesPerCluster);
       }
       else
       {
         // Write full cluster, then go to the next cluster
-        lseek(
-          imageHandle,
-          dataStartAddress + ((cluster - 2) * bytesPerCluster),
-          SEEK_SET);
-        
-        read(imageHandle, buffer, bytesPerCluster);
         write(fileHandle, buffer, bytesPerCluster);
       }
       

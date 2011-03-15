@@ -10,10 +10,15 @@ using namespace std;
 // Extracts the file or subdirectory associated with the given directory entry.
 void extract(DirectoryEntry *entry)
 {
-  int c;
+  int
+    c,
+    fileHandle;
+  
   byte
     *name = entry->getName(),
     *ext = entry->getExtension();
+  
+  char fullName[13];
   
   if (entry->isDeleted()
     || entry->getName()[0] == 0x00
@@ -37,7 +42,8 @@ void extract(DirectoryEntry *entry)
     }
   }
   
-  printf("%s.%s\n", name, ext);
+  sprintf(fullName, "%s.%s", name, ext);
+  printf("%s\n", fullName);
   
   if (entry->isSubdirectory())
   {
@@ -46,8 +52,21 @@ void extract(DirectoryEntry *entry)
   }
   else
   {
-    // File: Extract data to current directory
+    // File: Extract data
+    // Create/open file for writing
+    fileHandle = open(fullName, O_WRONLY | O_CREAT | O_TRUNC);
+    
+    if (fileHandle == -1)
+    {
+      printf("Failed to create file for extraction: %s\n", fullName);
+      
+      return;
+    }
+    
+    // Traverse FAT and extract data from each cluster referenced
     // TODO
+    
+    close(fileHandle);
   }
 }
 

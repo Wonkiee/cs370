@@ -8,19 +8,30 @@
 using namespace std;
 
 // Extracts the file or subdirectory associated with the given directory entry.
-void extract(DirectoryEntry *entry, FileAllocationTable *fat)
+void extract(
+  DirectoryEntry *entry,
+  FileAllocationTable *fat,
+  BootStrapSector *bootSector,
+  int imageHandle)
 {
   int
     c,
     fileHandle,
     cluster,
-    nextCluster;
+    nextCluster,
+    bytesPerCluster = bootSector->getNumBytesPerCluster(),
+    dataStartAddress = bootSector->getNumBytesInReservedSectors()
+      + (bootSector->getNumBytesInFAT() * bootSector->getNumCopiesFAT())
+      + (bootSector->getNumEntriesInRootDir() * 32);
   
   byte
     *name = entry->getName(),
     *ext = entry->getExtension();
   
-  char fullName[13];
+  char
+    separator,
+    fullName[13],
+    buffer[bytesPerCluster];
   
   if (entry->isDeleted()
     || entry->getName()[0] == 0x00
@@ -44,7 +55,16 @@ void extract(DirectoryEntry *entry, FileAllocationTable *fat)
     }
   }
   
-  sprintf(fullName, "%s.%s", name, ext);
+  if (ext[0] == '\0')
+  {
+    separator = '\0';
+  }
+  else
+  {
+    separator = '.';
+  }
+  
+  sprintf(fullName, "%s%c%s", name, separator, ext);
   printf("%s\n", fullName);
   
   if (entry->isSubdirectory())
@@ -67,7 +87,7 @@ void extract(DirectoryEntry *entry, FileAllocationTable *fat)
     
     // Traverse FAT and extract data from each cluster referenced
     cluster = entry->getStartingCluster();
-    
+    printf("-- %d --", cluster);
     // NOTE: This currently doesn't check for bad clusters or reserved values
     while (cluster != 0 && cluster < 0xFF8)
     {
@@ -78,15 +98,17 @@ void extract(DirectoryEntry *entry, FileAllocationTable *fat)
       {
         // This is the last cluster; write only until end of file
         // TODO
-        
-        // printf("%d\n", cluster);    // testing
       }
       else
       {
         // Write full cluster, then go to the next cluster
-        // TODO
+        lseek(
+          imageHandle,
+          dataStartAddress + ((cluster - 2) * bytesPerCluster),
+          SEEK_SET);
         
-        // printf("%d | ", cluster);    // testing
+        read(imageHandle, buffer, bytesPerCluster);
+        write(fileHandle, buffer, bytesPerCluster);
       }
       
       cluster = nextCluster;
@@ -168,7 +190,7 @@ int main(int argc, char *argv[])
   
   for (e = 0; e < numEntries; e++)
   {
-    extract(entries[e], fat);
+    extract(entries[e], fat, boot, imageHandle);
   }
   
   printf("--- done ---\n");

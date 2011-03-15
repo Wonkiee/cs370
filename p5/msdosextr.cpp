@@ -8,11 +8,13 @@
 using namespace std;
 
 // Extracts the file or subdirectory associated with the given directory entry.
-void extract(DirectoryEntry *entry)
+void extract(DirectoryEntry *entry, FileAllocationTable *fat)
 {
   int
     c,
-    fileHandle;
+    fileHandle,
+    cluster,
+    nextCluster;
   
   byte
     *name = entry->getName(),
@@ -64,7 +66,29 @@ void extract(DirectoryEntry *entry)
     }
     
     // Traverse FAT and extract data from each cluster referenced
-    // TODO
+    cluster = entry->getStartingCluster();
+    
+    // NOTE: This currently doesn't check for bad clusters or reserved values
+    while (cluster != 0 && cluster < 0xFF8)
+    {
+      // Get next cluster from FAT
+      nextCluster = fat->getEntry(cluster);
+      
+      if (nextCluster >= 0xFF8)
+      {
+        // This is the last cluster; write only until end of file
+        // TODO
+        printf("%d\n", cluster);    // testing
+      }
+      else
+      {
+        // Write full cluster, then go to the next cluster
+        // TODO
+        printf("%d | ", cluster);    // testing
+      }
+      
+      cluster = nextCluster;
+    }
     
     close(fileHandle);
   }
@@ -142,7 +166,7 @@ int main(int argc, char *argv[])
   
   for (e = 0; e < numEntries; e++)
   {
-    extract(entries[e]);
+    extract(entries[e], fat);
   }
   
   printf("--- done ---\n");

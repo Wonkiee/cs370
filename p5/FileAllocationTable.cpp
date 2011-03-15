@@ -12,9 +12,30 @@ FileAllocationTable::FileAllocationTable(int is, int start)
   startAddress = start;
 }
 
-// Retrieves the FAT entry for the given cluster.  The returned value is the 12-
-// bit entry 0-padded into a 16-bit integer.
+// Retrieves the FAT entry for the given cluster.  The 12-bit FAT entry is
+// prepended by 0s to a 16-bit integer.
 int FileAllocationTable::getEntry(int cluster)
 {
-  // TODO
+  byte entry[2];
+  
+  int value;
+  
+  // Seek to the start of the FAT in the disk image
+  lseek(imageStream, startAddress, SEEK_SET);
+  
+  // Seek to the proper byte for this cluster number, and read the entry there
+  lseek(imageStream, (3 * cluster) / 2, SEEK_CUR);
+  read(imageStream, entry, 2);
+  
+  // Use the proper 12 bits, depending on the parity of the cluster number
+  if (cluster % 2 == 0)
+  {
+    value = ((entry[1] & 0x0F) << 4) + entry[0];
+  }
+  else
+  {
+    value = (entry[1] << 4) + ((entry[0] & 0xF0) >> 4);
+  }
+  
+  return value;
 }

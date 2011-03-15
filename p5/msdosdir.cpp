@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include "BootStrapSector.h"
-#include "FileAllocationTable.h"
 #include "DirectoryEntry.h"
 
 using namespace std;
@@ -12,9 +11,8 @@ int main(int argc, char *argv[])
 {
   int imageHandle;
   
-  BootStrapSector     *boot;
-  FileAllocationTable *fat;
-  DirectoryEntry      **entries;
+  BootStrapSector *boot;
+  DirectoryEntry  **entries;
   
   byte
     *sn,
@@ -46,9 +44,8 @@ int main(int argc, char *argv[])
     return -1;
   }
   
-  // Read the boot sector and locate the FAT and root directory
+  // Read the boot sector and locate the root directory
   boot = new BootStrapSector(imageHandle);
-  fat  = new FileAllocationTable(imageHandle, boot->getNumBytesInReservedSectors());
   
   sn = boot->getVolumeSerialNumber();
   
@@ -110,9 +107,6 @@ int main(int argc, char *argv[])
   // Clean up allocated memory
   delete boot;
   boot = NULL;
-  
-  delete fat;
-  fat = NULL;
   
   for (e = 0; e < numEntries; e++)
   {

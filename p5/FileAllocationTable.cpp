@@ -12,8 +12,9 @@ FileAllocationTable::FileAllocationTable(int is, int start)
   startAddress = start;
 }
 
-// TOOD
-void FileAllocationTable::something()
+// Retrieves the FAT entry for the given cluster.  The returned value is the 12-
+// bit entry 0-padded into a 16-bit integer.
+int FileAllocationTable::getEntry(int cluster)
 {
   // TODO
 }

@@ -78,13 +78,15 @@ void extract(DirectoryEntry *entry, FileAllocationTable *fat)
       {
         // This is the last cluster; write only until end of file
         // TODO
-        printf("%d\n", cluster);    // testing
+        
+        // printf("%d\n", cluster);    // testing
       }
       else
       {
         // Write full cluster, then go to the next cluster
         // TODO
-        printf("%d | ", cluster);    // testing
+        
+        // printf("%d | ", cluster);    // testing
       }
       
       cluster = nextCluster;

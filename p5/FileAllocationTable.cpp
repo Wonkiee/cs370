@@ -30,7 +30,7 @@ int FileAllocationTable::getEntry(int cluster)
   // Use the proper 12 bits, depending on the parity of the cluster number
   if (cluster % 2 == 0)
   {
-    value = ((entry[1] & 0x0F) << 4) + entry[0];
+    value = ((entry[1] & 0x0F) << 8) + entry[0];
   }
   else
   {
